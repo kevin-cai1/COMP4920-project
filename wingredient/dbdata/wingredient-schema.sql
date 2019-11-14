@@ -103,17 +103,11 @@ CREATE TABLE Favourites (
     primary key (account, recipe)
 );
 
-DROP TABLE IF EXISTS Likes;
-CREATE TABLE Likes (
+DROP TABLE IF EXISTS Recipe_Votes CASCADE;
+CREATE TABLE Recipe_Votes (
     account     varchar(32) references Account(username),
     recipe      integer references Recipe(id),
-    primary key (account, recipe)
-);
-
-DROP TABLE IF EXISTS Dislikes;
-CREATE TABLE Dislikes (
-    account     varchar(32) references Account(username),
-    recipe      integer references Recipe(id),
+    vote      integer CHECK (vote = 0 OR vote = 1),
     primary key (account, recipe)
 );
 
@@ -131,4 +125,14 @@ select
   count(recipe) AS compulsory_ingredient_count
 from compulsory_recipetoingredient
 group by recipe
+;
+
+CREATE OR REPLACE VIEW recipe_rating AS
+SELECT
+  r.id AS recipe,
+  sum(rv.vote)::float / count(r.id)::float AS rating
+FROM Recipe r
+    LEFT JOIN Recipe_Votes rv ON r.id = rv.recipe
+GROUP BY r.id
+ORDER BY rating DESC
 ;

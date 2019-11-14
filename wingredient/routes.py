@@ -156,6 +156,8 @@ def get_search():
             whereclauses = []
             query_args = {}
 
+            # Create the expressions and arguments to match the search filters
+
             ingredients = request.args.getlist("ingredients")
             if ingredients:
                 whereclauses.append("i.name IN %(ingredients)s")
@@ -183,10 +185,17 @@ def get_search():
                 whereclauses.append("r.serving >= %(num_servings)s")
                 query_args["num_servings"] = num_servings
 
+            min_rating = request.args.get("min_rating", default=0, type=int)
+            if min_rating:
+                whereclauses.append("(rr.rating ISNULL OR rr.rating >= %(min_rating)s)")
+                query_args["min_rating"] = min_rating / 100
+
+            # Format the expressions into a single "WHERE <expr>" string
             if whereclauses:
                 whereclause = "WHERE " + " AND ".join(whereclauses)
             else:
                 whereclause = ""
+
             query = f"""
                 SELECT
                   r.id,
@@ -195,6 +204,7 @@ def get_search():
                   r.description,
                   r.imageref,
                   r.serving,
+                  rr.rating,
                   ic.compulsory_ingredient_count,
                   (
                     {missing_ingredient_count_expr}
@@ -203,10 +213,12 @@ def get_search():
                 JOIN ingredient i ON rtoi.ingredient = i.id
                 JOIN ingredient_counts ic on rtoi.recipe = ic.recipe
                 JOIN recipe r ON rtoi.recipe = r.id
+                JOIN recipe_rating rr ON rtoi.recipe = rr.recipe
                 {whereclause}
                 GROUP BY
                   r.id,
-                  ic.compulsory_ingredient_count
+                  ic.compulsory_ingredient_count,
+                  rr.rating
                 ORDER BY
                   missing_ingredient_count,
                   r.name
