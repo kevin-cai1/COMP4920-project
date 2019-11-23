@@ -765,15 +765,19 @@ def recipe_confirm():
     display_method = recipe_method.split('|')
     if request.method == "POST":
         # take file input
+        path = "static/images/recipe_images/"
         if 'recipe_image' in request.files:
             image = request.files['recipe_image']
             if image.filename != '':
                 print(image.filename)
                 filepath = 'wingredient/static/images/recipe_images'
                 image.save(os.path.join(filepath, image.filename))
-        print("file uploaded")
-        path = "static/images/recipe_images/"
-        recipe_imageRef = path + image.filename
+                print("file uploaded")
+                recipe_imageRef = path + image.filename
+            else:
+                recipe_imageRef = "static/images/no_photo.png"
+        else:
+            recipe_imageRef = "static/images/no_photo.png" 
         print(recipe_imageRef)
         #submit recipe into database
         recipe_id = upload_recipe(current_user.get_id(), recipe_name, recipe_time, recipe_difficulty, recipe_serving, recipe_notes, recipe_description, cuisine_tags, dietary_tags, recipe_imageRef, recipe_method, recipe_ingredients, ingredient_quantities, ingredient_checks, recipe_equipment)
